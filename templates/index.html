@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mental Health Wellness Predictor</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(120deg, #E0C3FC 0%, #8EC5FC 100%);
+            min-height: 100vh;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .input-field {
+            @apply w-full p-3 rounded-lg bg-white bg-opacity-90 border-2 border-transparent focus:border-blue-400 focus:outline-none transition-all duration-300;
+        }
+
+        .result-card {
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-card.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Enhanced result-specific styles */
+        .result-poor {
+            background: linear-gradient(135deg, #FF9A9E 0%, #FAD0C4 99%);
+            border-left: 6px solid #FF6B6B;
+        }
+
+        .result-fair {
+            background: linear-gradient(135deg, #A1C4FD 0%, #C2E9FB 100%);
+            border-left: 6px solid #4A90E2;
+        }
+
+        .result-good {
+            background: linear-gradient(135deg, #81FBB8 0%, #28C76F 100%);
+            border-left: 6px solid #28C76F;
+        }
+
+        /* Gorgeous result box styling */
+        .result-status {
+            position: relative;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .result-status::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at top right, rgba(255,255,255,0.2), transparent);
+            pointer-events: none;
+        }
+
+        .status-label {
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #2D3748, #4A5568);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .status-value {
+            font-size: 3rem;
+            font-weight: 800;
+            text-align: center;
+            margin: 1.5rem 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .status-value::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        .recommendations {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .recommendations h3 {
+            color: #2D3748;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .recommendations h3::before {
+            content: '★';
+            position: absolute;
+            left: 0;
+            color: #4299E1;
+        }
+
+        .recommendations ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .recommendations li {
+            position: relative;
+            padding: 0.75rem 0 0.75rem 2rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .recommendations li:last-child {
+            border-bottom: none;
+        }
+
+        .recommendations li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #4299E1;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+
+        .recommendations li:hover {
+            transform: translateX(5px);
+        }
+
+        .recommendations li:hover::before {
+            transform: translateX(3px);
+        }
+
+        /* Status-specific colors */
+        .result-poor .status-value { color: #FF6B6B; }
+        .result-poor .status-value::after { background: #FF6B6B; }
+        
+        .result-fair .status-value { color: #4A90E2; }
+        .result-fair .status-value::after { background: #4A90E2; }
+        
+        .result-good .status-value { color: #28C76F; }
+        .result-good .status-value::after { background: #28C76F; }
+
+        /* Rest of the styles remain the same... */
+        /* (Previous styles for input range slider, animated background, loading spinner, etc.) */
+    </style>
+</head>
+<body class="gradient-bg">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Mental Health Wellness Predictor</h1>
+                <p class="text-xl text-gray-700">Understand your mental well-being through data-driven insights</p>
+            </div>
+
+            <!-- Main Form -->
+            <div class="glass rounded-xl p-8 shadow-2xl form-container">
+                <form method="post" id="predictionForm" class="space-y-6">
+                    <!-- Age -->
+                    <div>
+                        <label class="block text-gray-700 text-lg mb-2" for="Age">Age</label>
+                        <input type="number" id="Age" name="Age" required class="input-field" min="0" max="120">
+                    </div>
+
+                    <!-- Sleep Hours -->
+                    <div>
+                        <label class="block text-gray-700 text-lg mb-2">Sleep Hours: <span id="sleepValue">8</span></label>
+                        <input type="range" id="Sleep_hours" name="Sleep_hours" min="0" max="24" step="0.5" value="8" 
+                               class="slider" oninput="document.getElementById('sleepValue').textContent = this.value">
+                    </div>
+
+                    <!-- Stress Level -->
+                    <div>
+                        <label class="block text-gray-700 text-lg mb-2">Stress Level: <span id="stressValue">5</span></label>
+                        <input type="range" id="Stress_level" name="Stress_level" min="0" max="10" value="5" 
+                               class="slider" oninput="document.getElementById('stressValue').textContent = this.value">
+                    </div>
+
+                    <!-- Exercise Frequency -->
+                    <div>
+                        <label class="block text-gray-700 text-lg mb-2">Exercise Frequency (days/week): <span id="exerciseValue">3</span></label>
+                        <input type="range" id="Exercise_frequency" name="Exercise_frequency" min="0" max="7" value="3" 
+                               class="slider" oninput="document.getElementById('exerciseValue').textContent = this.value">
+                    </div>
+
+                    <!-- Social Interaction -->
+                    <div>
+                        <label class="block text-gray-700 text-lg mb-2">Social Interaction (days/week): <span id="socialValue">3</span></label>
+                        <input type="range" id="Social_interaction_frequency" name="Social_interaction_frequency" min="0" max="7" value="3" 
+                               class="slider" oninput="document.getElementById('socialValue').textContent = this.value">
+                    </div>
+
+                    <!-- Gender -->
+                    <div>
+                        <label class="block text-gray-700 text-lg mb-2" for="Gender">Gender</label>
+                        <select id="Gender" name="Gender" required class="input-field">
+                            <option value="Female">Female</option>
+                            <option value="Male">Male</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-300 transform hover:scale-105 flex items-center justify-center">
+                        <svg class="loading-spinner w-5 h-5 mr-3" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Predict Well-being
+                    </button>
+                </form>
+
+                <!-- Enhanced Result Section -->
+                {% if result %}
+                <div id="resultCard" class="result-card mt-8 rounded-xl shadow-lg 
+                    {% if result == 'Poor' %}result-poor
+                    {% elif result == 'Fair' %}result-fair
+                    {% else %}result-good{% endif %}">
+                    <div class="result-status p-6">
+                        <h2 class="status-label text-center">Your Mental Well-being Status</h2>
+                        <div class="status-value">{{ result }}</div>
+                        
+                        <div class="recommendations">
+                            {% if result == 'Poor' %}
+                            <h3>Recommended Actions</h3>
+                            <ul>
+                                <li>Consider speaking with a mental health professional</li>
+                                <li>Increase your sleep hours and exercise routine</li>
+                                <li>Practice stress-reduction techniques daily</li>
+                                <li>Reach out to friends or family for support</li>
+                            </ul>
+                            {% elif result == 'Fair' %}
+                            <h3>Suggestions for Improvement</h3>
+                            <ul>
+                                <li>Maintain regular exercise and sleep schedule</li>
+                                <li>Increase social interactions weekly</li>
+                                <li>Consider stress management techniques</li>
+                                <li>Set small, achievable wellness goals</li>
+                            </ul>
+                            {% else %}
+                            <h3>Keep Up the Great Work!</h3>
+                            <ul>
+                                <li>Maintain your current healthy lifestyle</li>
+                                <li>Share your wellness practices with others</li>
+                                <li>Regular check-ins can help maintain well-being</li>
+                                <li>Celebrate your achievements</li>
+                            </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show result card with animation if it exists
+            const resultCard = document.getElementById('resultCard');
+            if (resultCard) {
+                setTimeout(() => {
+                    resultCard.classList.add('show');
+                }, 100);
+            }
+
+            // Form submission handling
+            const form = document.getElementById('predictionForm');
+            form.addEventListener('submit', function() {
+                this.classList.add('loading');
+            });
+
+            // Input animations
+            const inputs = document.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    gsap.to(this, {
+                        scale: 1.02,
+                        duration: 0.2
+                    });
+                });
+
+                input.addEventListener('blur', function() {
+                    gsap.to(this, {
+                        scale: 1,
+                        duration: 0.2
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
